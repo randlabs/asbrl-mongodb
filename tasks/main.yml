@@ -1,0 +1,33 @@
+---
+- name: Create MongoDB directory
+  file:
+    path: /home/{{default_user}}/mongo/
+    state: directory  
+
+- name: MongoDB Data Volume
+  docker_volume:
+    name: mongodb_data
+    state: present
+
+- name: MongoDB config file
+  template:
+    src: mongod.conf.j2
+    dest: /home/{{default_user}}/mongo/mongod.conf    
+
+- name: MongoDB
+  docker_container:
+    name: "mongo"
+    image: "mongo:{{ BUILD }}"
+    command: "-f /etc/mongo/mongod.conf"
+    pull: "true"
+    recreate: "yes"
+    env:
+      MONGO_INITDB_ROOT_USERNAME: "{{ ROOT_USERNAME }}"
+      MONGO_INITDB_ROOT_PASSWORD: "{{ ROOT_PASSWORD }}"
+    state: "started"
+    restart_policy: "unless-stopped"
+    published_ports:
+      - "0.0.0.0:27017:27017"
+    volumes:
+      - /home/{{default_user}}/mongo/mongod.conf:/etc/mongo/mongod.conf
+      - mongodb_data:/data/db
