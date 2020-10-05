@@ -20,6 +20,14 @@ storage:
 net:
   port: {{ NET_PORT }}
   bindIp: {{ NET_BINDIP }}
+{% if SECURITY_CLUSTER_AUTH_MODE == 'x509' or SECURITY_CLUSTER_AUTH_MODE == 'sendX509' %}
+  ssl:
+    mode: {{ NET_SSL_MODE }}
+    PEMKeyFile: {{ NET_SSL_PEM_KEYFILE }}
+    CAFile: {{ NET_SSL_CA_FILE }}
+    clusterFile: {{ NET_SSL_CLUSTER_FILE }}
+{% endif %}
+
 
 
 # how the process runs
@@ -28,10 +36,18 @@ processManagement:
 
 security:
   authorization: {{ SECURITY_AUTHORIZATION }}
+{% if SECURITY_CLUSTER_AUTH_MODE == 'x509' or SECURITY_CLUSTER_AUTH_MODE == 'sendX509' %}
+  clusterAuthMode {{SECURITY_CLUSTER_AUTH_MODE}}
+{% elif SECURITY_KEYFILE != '' %}
+  keyFile: /etc/mongo/certificates/{{ SECURITY_KEYFILE }}
+{% endif %}
 
 #operationProfiling:
 
-#replication:
+{% if REPLICATION_NAME != '' %}
+replication:
+  replSetName: {{ REPLICATION_NAME }}
+{% endif %}
 
 #sharding:
 

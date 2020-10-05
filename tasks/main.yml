@@ -1,24 +1,26 @@
 ---
 - name: Create MongoDB directory
   file:
-    path: /home/{{default_user}}/mongo/
+    path: /home/{{default_user}}/{{ DOCKER_NAME }}/certificates
     state: directory  
 
 - name: MongoDB Data Volume
   docker_volume:
-    name: mongodb_data
+    name: "{{ DOCKER_NAME }}_data"
     state: present
 
 - name: MongoDB config file
   template:
     src: mongod.conf.j2
-    dest: /home/{{default_user}}/mongo/mongod.conf    
+    dest: /home/{{default_user}}/{{ DOCKER_NAME }}/mongod.conf    
 
 - name: MongoDB
   docker_container:
-    name: "mongo"
+    name: "{{ DOCKER_NAME }}"
     image: "mongo:{{ BUILD }}"
-    command: "-f /etc/mongo/mongod.conf"
+    command: 
+      - -f /etc/mongo/mongod.conf
+      #- --replSet rplmongo
     pull: "true"
     recreate: "yes"
     env:
@@ -27,7 +29,8 @@
     state: "started"
     restart_policy: "unless-stopped"
     published_ports:
-      - "0.0.0.0:27017:27017"
+      - "0.0.0.0:{{ NET_PORT }}:{{ NET_PORT }}"
     volumes:
-      - /home/{{default_user}}/mongo/mongod.conf:/etc/mongo/mongod.conf
-      - mongodb_data:/data/db
+      - /home/{{default_user}}/{{ DOCKER_NAME }}/mongod.conf:/etc/mongo/mongod.conf
+      - '{{ DOCKER_NAME }}_data:/data/db'
+      - /home/{{default_user}}/{{ DOCKER_NAME }}/certificates/:/etc/mongo/certificates
