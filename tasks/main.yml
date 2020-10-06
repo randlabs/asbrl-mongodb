@@ -25,7 +25,6 @@
     image: "mongo:{{ BUILD }}"
     command: 
       - -f /etc/mongo/mongod.conf
-      #- --replSet rplmongo
     pull: "true"
     recreate: "yes"
     env:
