@@ -31,6 +31,8 @@
       MONGO_INITDB_ROOT_USERNAME: "{{ ROOT_USERNAME }}"
       MONGO_INITDB_ROOT_PASSWORD: "{{ ROOT_PASSWORD }}"
     state: "started"
+    log_driver: "{{DOCKER_LOG_DRIVER}}"
+    log_options: "{{DOCKER_LOG_OPTIONS}}"
     restart_policy: "unless-stopped"
     published_ports:
       - "0.0.0.0:{{ NET_PORT }}:{{ NET_PORT }}"

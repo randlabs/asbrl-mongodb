@@ -2,6 +2,8 @@
 default_user: 'ubuntu'
 BUILD: '4.4.0'
 DOCKER_NAME: 'mongo'
+DOCKER_LOG_DRIVER: "json-file"
+DOCKER_LOG_OPTIONS: "{}"
 ROOT_USERNAME: 'root'
 ROOT_PASSWORD: 'Pa$$w0rd'
 SET_REPLICA_STANDALONE: false
