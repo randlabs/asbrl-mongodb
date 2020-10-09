@@ -1,2 +1,5 @@
 mongo --eval 'rs.initiate({_id:"{{REPLICATION_NAME}}",version:1,members:[{_id:0,host:"localhost:{{NET_PORT}}"}]})'
-mongo --eval 'db.getSiblingDB("admin").createUser({"user":"{{ROOT_USERNAME}}","pwd":"{{ROOT_PASSWORD}}",roles:[{"role":"clusterAdmin","db":"admin"}]})'
+mongo --eval 'db.getSiblingDB("admin").createUser({"user":"{{ROOT_USERNAME}}","pwd":"{{ROOT_PASSWORD}}",roles:[{role:"userAdminAnyDatabase",db:"admin"},{"role":"clusterAdmin","db":"admin"}]})'
+{% if INIT_USER_DB != '' and INIT_USER_NAME != '' and INIT_USER_PASS != '' %}
+mongo -u'{{ROOT_USERNAME}}' -p'{{ROOT_PASSWORD}}' --eval 'db.getSiblingDB("{{INIT_USER_DB}}").createUser({"user":"{{INIT_USER_NAME}}","pwd":"{{INIT_USER_PASS}}",roles:[{role:"{{INIT_USER_ROLE}}",db:"{{INIT_USER_DB}}"}]})'
+{% endif %}

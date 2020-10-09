@@ -28,6 +28,10 @@ Role Variables
 - NET_SSL_CLUSTER_FILE: '' 
 - SECURITY_KEYFILE: ''
 - REPLICATION_NAME: 'rs0' 
+- INIT_USER_NAME: ''
+- INIT_USER_PASS: ''
+- INIT_USER_ROLE: 'readWrite'
+- INIT_USER_DB: ''
 
 Dependencies
 ------------
@@ -48,7 +52,6 @@ Example Playbook
         tags:
           - mongo
 
-
       - name: Deploy MongoDB with Replica Set Standalone
         include_role:
           name: asbrl-mongodb
@@ -58,6 +61,23 @@ Example Playbook
           SECURITY_AUTHORIZATION: "enabled"
           REPLICATION_NAME: "rs0"
           SET_REPLICA_STANDALONE: true
+        tags:
+          - mongo
+
+      - name: Deploy MongoDB with Replica Set Standalone and initialize user credentials
+        include_role:
+          name: asbrl-mongodb
+        vars:
+          ROOT_USERNAME: "root"
+          ROOT_PASSWORD: "Pa$$w0rd"
+          SECURITY_AUTHORIZATION: "enabled"
+          REPLICATION_NAME: "rs0"
+          SET_REPLICA_STANDALONE: true
+          INIT_USER_NAME: "dummy_usr"
+          INIT_USER_PASS: "1234"
+          INIT_USER_DB: "dummy"
+        tags:
+          - mongo
 
 License
 -------
