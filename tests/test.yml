@@ -1,5 +1,28 @@
 ---
-- hosts: localhost
-  remote_user: root
-  roles:
-    - asbrl-mongodb/
+- name: Deploy
+  hosts: localhost
+  order: sorted
+  become: true
+
+  pre_tasks:
+
+  - name: copy role locally (DEBUG)
+    copy:
+      src: ../
+      dest: ./roles/asbrl-mongodb
+  
+  tasks:
+
+  - name: Deploy MongoDB with Replica Set Standalone
+    include_role:
+      name: asbrl-mongodb
+    vars:
+      ROOT_USERNAME: "root"
+      ROOT_PASSWORD: "Pa$$w0rd"
+      SECURITY_AUTHORIZATION: "enabled"
+      REPLICATION_NAME: "rs0"
+      SET_REPLICA_STANDALONE: true
+      DOCKER_CPU_QUOTA: 100000
+      DOCKER_MEMORY: 1G
+    tags:
+      - mongo

@@ -32,6 +32,11 @@ Role Variables
 - INIT_USER_PASS: ''
 - INIT_USER_ROLE: 'readWrite'
 - INIT_USER_DB: ''
+- DOCKER_CPU_PERIOD: 0
+- DOCKER_CPU_QUOTA: 0
+- DOCKER_MEMORY: 0
+- CONTAINER_STATE: 'started'
+- VOLUME_STATE: 'present'
 
 Dependencies
 ------------
