@@ -7,7 +7,7 @@
 - name: MongoDB Data Volume
   docker_volume:
     name: "{{ DOCKER_NAME }}_data"
-    state: present
+    state: "{{ VOLUME_STATE }}"
 
 - name: MongoDB config file
   template:
@@ -30,9 +30,12 @@
     env:
       MONGO_INITDB_ROOT_USERNAME: "{{ ROOT_USERNAME }}"
       MONGO_INITDB_ROOT_PASSWORD: "{{ ROOT_PASSWORD }}"
-    state: "started"
-    log_driver: "{{DOCKER_LOG_DRIVER}}"
-    log_options: "{{DOCKER_LOG_OPTIONS}}"
+    cpu_period: "{{ DOCKER_CPU_PERIOD }}"
+    cpu_quota: "{{ DOCKER_CPU_QUOTA }}"
+    memory: "{{ DOCKER_MEMORY }}"
+    state: "{{ CONTAINER_STATE }}"
+    log_driver: "{{ DOCKER_LOG_DRIVER }}"
+    log_options: "{{ DOCKER_LOG_OPTIONS }}"
     restart_policy: "unless-stopped"
     published_ports:
       - "0.0.0.0:{{ NET_PORT }}:{{ NET_PORT }}"
@@ -46,9 +49,9 @@
   wait_for:
     port: "{{ NET_PORT }}"
     delay: 5
-  when: SET_REPLICA_STANDALONE
+  when: SET_REPLICA_STANDALONE and CONTAINER_STATE != 'absent'
 
 - name: Config MongoDB Standalone Replica Set 
-  command: docker exec {{DOCKER_NAME}} sh /etc/mongo/set-rs-standalone.sh
+  command: docker exec {{ DOCKER_NAME }} sh /etc/mongo/set-rs-standalone.sh
   ignore_errors: yes
-  when: SET_REPLICA_STANDALONE
+  when: SET_REPLICA_STANDALONE and CONTAINER_STATE != 'absent' 
