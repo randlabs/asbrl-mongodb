@@ -9,7 +9,7 @@
   - name: copy role locally (DEBUG)
     copy:
       src: ../
-      dest: ./roles/asbrl-mongodb
+      dest: /etc/ansible/roles/asbrl-mongodb
   
   tasks:
 
@@ -24,5 +24,8 @@
       SET_REPLICA_STANDALONE: true
       DOCKER_CPU_QUOTA: 100000
       DOCKER_MEMORY: 1G
+      INIT_USER_DB: dbtest
+      INIT_USER_NAME: testusr
+      INIT_USER_PASS: test1234
     tags:
       - mongo

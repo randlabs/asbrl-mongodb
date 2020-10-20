@@ -1,27 +1,22 @@
 ---
 - name: Create MongoDB directory
   file:
-    path: /home/{{default_user}}/{{ DOCKER_NAME }}/certificates
+    path: /home/{{default_user}}/{{ CONTAINER_NAME }}/certificates
     state: directory  
 
 - name: MongoDB Data Volume
   docker_volume:
-    name: "{{ DOCKER_NAME }}_data"
+    name: "{{ CONTAINER_NAME }}_data"
     state: "{{ VOLUME_STATE }}"
 
 - name: MongoDB config file
   template:
     src: mongod.conf.j2
-    dest: /home/{{default_user}}/{{ DOCKER_NAME }}/mongod.conf    
-
-- name: MongoDB Generate Replica Set Standalone SH file
-  template:
-    src: set-rs-standalone.sh.j2
-    dest: /home/{{default_user}}/{{ DOCKER_NAME }}/set-rs-standalone.sh
+    dest: /home/{{default_user}}/{{ CONTAINER_NAME }}/mongod.conf    
 
 - name: MongoDB
   docker_container:
-    name: "{{ DOCKER_NAME }}"
+    name: "{{ CONTAINER_NAME }}"
     image: "mongo:{{ BUILD }}"
     command: 
       - -f /etc/mongo/mongod.conf
@@ -40,10 +35,10 @@
     published_ports:
       - "0.0.0.0:{{ NET_PORT }}:{{ NET_PORT }}"
     volumes:
-      - /home/{{default_user}}/{{ DOCKER_NAME }}/mongod.conf:/etc/mongo/mongod.conf
-      - '{{ DOCKER_NAME }}_data:/data/db'
-      - /home/{{default_user}}/{{ DOCKER_NAME }}/certificates/:/etc/mongo/certificates
-      - /home/{{default_user}}/{{ DOCKER_NAME }}/set-rs-standalone.sh:/etc/mongo/set-rs-standalone.sh
+      - /home/{{default_user}}/{{ CONTAINER_NAME }}/mongod.conf:/etc/mongo/mongod.conf
+      - '{{ CONTAINER_NAME }}_data:/data/db'
+      - /home/{{default_user}}/{{ CONTAINER_NAME }}/certificates/:/etc/mongo/certificates
+      - /home/{{default_user}}/{{ CONTAINER_NAME }}/set-rs-standalone.sh:/etc/mongo/set-rs-standalone.sh
 
 - name: Wait until MongoDB is running
   wait_for:
@@ -52,6 +47,37 @@
   when: SET_REPLICA_STANDALONE and CONTAINER_STATE != 'absent'
 
 - name: Config MongoDB Standalone Replica Set 
-  command: docker exec {{ DOCKER_NAME }} sh /etc/mongo/set-rs-standalone.sh
+  command: 
+    argv: 
+      - docker 
+      - exec 
+      - "{{ CONTAINER_NAME }}"
+      - sh 
+      - '-c'
+      - mongo --eval 'rs.initiate({_id:"{{REPLICATION_NAME}}",version:1,members:[{_id:0,host:"localhost:{{NET_PORT}}"}]})'
   ignore_errors: yes
   when: SET_REPLICA_STANDALONE and CONTAINER_STATE != 'absent' 
+
+- name: Setting Replica Set ClusterAdmin
+  command: 
+   argv: 
+      - docker 
+      - exec 
+      - "{{ CONTAINER_NAME }}"
+      - sh 
+      - '-c'
+      - mongo --eval 'db.getSiblingDB("admin").createUser({"user":"{{ROOT_USERNAME}}","pwd":"{{ROOT_PASSWORD}}",roles:[{role:"userAdminAnyDatabase",db:"admin"},{"role":"clusterAdmin","db":"admin"}]})'
+  ignore_errors: yes
+  when: SET_REPLICA_STANDALONE and CONTAINER_STATE != 'absent' 
+
+- name: MongoDB INIT DB and Credentials
+  command: 
+    argv: 
+      - docker 
+      - exec 
+      - "{{ CONTAINER_NAME }}"
+      - sh 
+      - '-c'
+      - mongo -u'{{ROOT_USERNAME}}' -p'{{ROOT_PASSWORD}}' --eval 'db.getSiblingDB("{{INIT_USER_DB}}").createUser({"user":"{{INIT_USER_NAME}}","pwd":"{{INIT_USER_PASS}}",roles:[{role:"{{INIT_USER_ROLE}}",db:"{{INIT_USER_DB}}"}]})'
+  ignore_errors: yes
+  when: CONTAINER_STATE != 'absent' and INIT_USER_DB != '' and INIT_USER_NAME != '' and INIT_USER_PASS != ''
