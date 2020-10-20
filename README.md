@@ -13,7 +13,7 @@ Role Variables
 
 - default_user: 'ubuntu'
 - BUILD: '4.4.0'
-- DOCKER_NAME: 'mongo'
+- CONTAINER_NAME: 'mongo'
 - ROOT_USERNAME: 'root'
 - ROOT_PASSWORD: 'Pa$$w0rd'
 - SET_REPLICA_STANDALONE: false
