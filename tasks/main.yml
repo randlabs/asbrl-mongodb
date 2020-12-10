@@ -3,18 +3,24 @@
   file:
     path: /home/{{ default_user }}/{{ CONTAINER_NAME }}/certificates
     state: directory
-    mode: 0644
+    mode: 0755
+  tags:
+  - asbrl-mongodb
 
 - name: MongoDB Data Volume
   docker_volume:
     name: "{{ CONTAINER_NAME }}_data"
     state: "{{ VOLUME_STATE }}"
+  tags:
+  - asbrl-mongodb
 
 - name: MongoDB config file
   template:
     src: mongod.conf.j2
     dest: /home/{{ default_user }}/{{ CONTAINER_NAME }}/mongod.conf
     mode: 0644
+  tags:
+  - asbrl-mongodb
 
 - name: MongoDB
   docker_container:
@@ -41,12 +47,16 @@
       - '{{ CONTAINER_NAME }}_data:/data/db'
       - /home/{{ default_user }}/{{ CONTAINER_NAME }}/certificates/:/etc/mongo/certificates
       - /home/{{ default_user }}/{{ CONTAINER_NAME }}/set-rs-standalone.sh:/etc/mongo/set-rs-standalone.sh
+  tags:
+  - asbrl-mongodb
 
 - name: Wait until MongoDB is running
   wait_for:
     port: "{{ NET_PORT }}"
     delay: 5
   when: SET_REPLICA_STANDALONE and CONTAINER_STATE != 'absent'
+  tags:
+  - asbrl-mongodb
 
 - name: Config MongoDB Standalone Replica Set
   command:
@@ -59,6 +69,8 @@
       - mongo --eval 'rs.initiate({_id:"{{ REPLICATION_NAME }}",version:1,members:[{_id:0,host:"localhost:{{ NET_PORT }}"}]})'
   ignore_errors: yes
   when: SET_REPLICA_STANDALONE and CONTAINER_STATE != 'absent'
+  tags:
+  - asbrl-mongodb
 
 - name: Setting Replica Set ClusterAdmin
   command:
@@ -71,6 +83,8 @@
       - mongo --eval 'db.getSiblingDB("admin").createUser({"user":"{{ ROOT_USERNAME }}","pwd":"{{ ROOT_PASSWORD }}",roles:[{role:"userAdminAnyDatabase",db:"admin"},{"role":"clusterAdmin","db":"admin"}]})'
   ignore_errors: yes
   when: SET_REPLICA_STANDALONE and CONTAINER_STATE != 'absent'
+  tags:
+  - asbrl-mongodb
 
 - name: MongoDB INIT DB and Credentials
   command:
@@ -83,3 +97,5 @@
       - mongo -u'{{ ROOT_USERNAME }}' -p'{{ ROOT_PASSWORD }}' --eval 'db.getSiblingDB("{{ INIT_USER_DB }}").createUser({"user":"{{ INIT_USER_NAME }}","pwd":"{{ INIT_USER_PASS }}",roles:[{role:"{{ INIT_USER_ROLE }}",db:"{{ INIT_USER_DB }}"}]})'
   ignore_errors: yes
   when: CONTAINER_STATE != 'absent' and INIT_USER_DB != '' and INIT_USER_NAME != '' and INIT_USER_PASS != ''
+  tags:
+  - asbrl-mongodb

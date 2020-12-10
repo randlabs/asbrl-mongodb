@@ -55,7 +55,7 @@ Example Playbook
           SECURITY_AUTHORIZATION: "enabled"
           WIREDTIGER_ENGINE_CACHESIZEGB: "6"
         tags:
-          - mongo
+          - asbrl-mongodb
 
       - name: Deploy MongoDB with Replica Set Standalone
         include_role:
@@ -67,7 +67,7 @@ Example Playbook
           REPLICATION_NAME: "rs0"
           SET_REPLICA_STANDALONE: true
         tags:
-          - mongo
+          - asbrl-mongodb
 
       - name: Deploy MongoDB with Replica Set Standalone and initialize user credentials
         include_role:
@@ -82,7 +82,7 @@ Example Playbook
           INIT_USER_PASS: "1234"
           INIT_USER_DB: "dummy"
         tags:
-          - mongo
+          - asbrl-mongodb
 
 License
 -------
