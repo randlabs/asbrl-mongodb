@@ -66,7 +66,7 @@
       - "{{ CONTAINER_NAME }}"
       - sh
       - '-c'
-      - mongo --eval 'rs.initiate({_id:"{{ REPLICATION_NAME }}",version:1,members:[{_id:0,host:"localhost:{{ NET_PORT }}"}]})'
+      - mongo --eval 'rs.initiate({_id:"{{ REPLICATION_NAME }}",version:1,members:[{_id:0,host:"{{ SERVER_IP }}:{{ NET_PORT }}"}]})'
   ignore_errors: yes
   when: SET_REPLICA_STANDALONE and CONTAINER_STATE != 'absent'
   tags:
