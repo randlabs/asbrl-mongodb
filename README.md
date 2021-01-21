@@ -18,7 +18,7 @@ Role Variables
 - ROOT_PASSWORD: 'Pa$$w0rd'
 - REPLICA: none (primary/secondary)
 - WIREDTIGER_ENGINE_CACHESIZEGB: ''
-- SERVER_IP: '172.17.0.1'
+- SERVER_HOST: '172.17.0.1'
 - NET_PORT: '27017'
 - NET_BINDIP: '127.0.0.1'
 - SECURITY_AUTHORIZATION: 'disabled' (enabled)
@@ -38,6 +38,11 @@ Role Variables
 - DOCKER_MEMORY: 0
 - CONTAINER_STATE: 'started'
 - VOLUME_STATE: 'present'
+- MASTER_HOST: 
+- MASTER_PORT: 27017
+- MASTER_HOST: localhost
+- MASTER_USERNAME: root
+- MASTER_PASSWORD: secret
 
 Dependencies
 ------------
@@ -52,7 +57,7 @@ Example Playbook
           name: asbrl-mongodb
         vars:
           ROOT_USERNAME: root
-          ROOT_PASSWORD: Pa$$w0rd
+          ROOT_PASSWORD: secret
 
       - name: Deploy MongoDB with Replica Set Standalone
         include_role:
@@ -61,11 +66,10 @@ Example Playbook
           CONTAINER_NAME: mongo-master
           NET_PORT: 27017
           ROOT_USERNAME: root
-          ROOT_PASSWORD: Pa$$w0rd
+          ROOT_PASSWORD: secret
           SECURITY_AUTHORIZATION: enabled
           REPLICA: master
           REPLICATION_NAME: rs0
-          NET_PORT: 27017
           INIT_USER_DB: dbtest
           INIT_USER_NAME: testusr
           INIT_USER_PASS: test1234
@@ -77,15 +81,14 @@ Example Playbook
           CONTAINER_NAME: mongo-slave
           NET_PORT: 27018
           ROOT_USERNAME: root
-          ROOT_PASSWORD: Pa$$w0rd2
+          ROOT_PASSWORD: secret2
           SECURITY_AUTHORIZATION: enabled
           REPLICA: secondary
           REPLICATION_NAME: rs0
-          MASTER_IP: localhost
-          MASTER_PORT: 27017
           MASTER_HOST: localhost
+          MASTER_PORT: 27017
           MASTER_USERNAME: root
-          MASTER_PASSWORD: Pa$$w0rd
+          MASTER_PASSWORD: secret
 
 License
 -------

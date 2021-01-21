@@ -1,8 +1,8 @@
 ---
 - name: Install Python Packages
   pip:
-    name: "{{item.name}}"
-    state: "{{item.state}}"
+    name: "{{ item.name }}"
+    state: "{{ item.state }}"
     executable: pip3
   vars:
     packages:
@@ -14,8 +14,8 @@
 
 - name: Install Packages
   apt:
-    name: "{{item.name}}"
-    state: "{{item.state}}"
+    name: "{{ item.name }}"
+    state: "{{ item.state }}"
   vars:
     packages:
     - name: mongodb-clients
@@ -54,8 +54,8 @@
     pull: "true"
     recreate: "yes"
     env:
-      MONGO_INITDB_ROOT_USERNAME: "{{ ROOT_USERNAME | default(omit)}}}"
-      MONGO_INITDB_ROOT_PASSWORD: "{{ ROOT_PASSWORD | default(omit)}}}"
+      MONGO_INITDB_ROOT_USERNAME: "{{ ROOT_USERNAME | default(omit) }}"
+      MONGO_INITDB_ROOT_PASSWORD: "{{ ROOT_PASSWORD | default(omit) }}"
     cpu_period: "{{ DOCKER_CPU_PERIOD }}"
     cpu_quota: "{{ DOCKER_CPU_QUOTA }}"
     memory: "{{ DOCKER_MEMORY }}"
@@ -107,13 +107,12 @@
 
 - name: Config MongoDB Standalone Replica Set
   mongodb_replicaset:
-    #login_host: "{{ SERVER_IP }}"
     login_port: "{{ NET_PORT }}"
     login_user: "{{ ROOT_USERNAME }}"
     login_password: "{{ ROOT_PASSWORD }}"
     login_database: admin
     replica_set: "{{ REPLICATION_NAME }}"
-    members: "{{ SERVER_IP }}:{{ NET_PORT }}"
+    members: "{{ SERVER_HOST }}:{{ NET_PORT }}"
     validate: no
   when: REPLICA == 'master' and CONTAINER_STATE != 'absent'
   tags:
@@ -154,9 +153,8 @@
     password: "{{ INIT_USER_PASS }}"
     roles: "{{ INIT_USER_ROLE }}"
     state: present
-  when: CONTAINER_STATE != 'absent' and INIT_USER_DB != '' and INIT_USER_NAME != '' and INIT_USER_PASS != ''
+  when: CONTAINER_STATE != 'absent' and INIT_USER_DB is defined and INIT_USER_NAME is defined and INIT_USER_PASS is defined
   tags:
-
   - asbrl-mongodb
 
 - name: Add node as a Secondary to existing Replica Set
@@ -164,18 +162,22 @@
     argv:
       - sh
       - '-c'
-      - mongo -u'{{ MASTER_USERNAME }}' -p'{{ MASTER_PASSWORD }}' --host '{{ MASTER_IP }}:{{ MASTER_PORT }}' --eval 'rs.add({host:"{{ SERVER_IP }}:{{ NET_PORT }}",priority:0,votes:0})' --authenticationDatabase admin
+      - mongo
+      - -u'{{ MASTER_USERNAME }}' -p'{{ MASTER_PASSWORD }}'
+      - --host '{{ MASTER_HOST }}:{{ MASTER_PORT }}'
+      - --eval 'rs.add({host:"{{ SERVER_HOST }}:{{ NET_PORT }}",priority:0,votes:0})'
+      - --authenticationDatabase admin
   when: REPLICA == 'secondary' and CONTAINER_STATE != 'absent'
-  tags: 
+  tags:
   - asbrl-mongodb
 
 # - name: Add node as a Secondary to existing Replica Set
-#   mongodb_shell:
-#     login_host: "{{ MASTER_IP }}"
+#   mongodb_shell: (only work in Ansible 2.10)
+#     login_host: "{{ MASTER_HOST }}"
 #     login_port: "{{ MASTER_PORT }}"
 #     login_user: "{{ MASTER_USERNAME }}"
 #     login_password: "{{ MASTER_PASSWORD }}"
-#     eval: "rs.add({host:'{{ SERVER_IP }}:{{ NET_PORT }}',priority:1,votes:1})"
+#     eval: "rs.add({host:'{{ SERVER_HOST }}:{{ NET_PORT }}',priority:1,votes:1})"
 #   when: REPLICA == 'secondary' and CONTAINER_STATE != 'absent'
 #   tags:
 #   - asbrl-mongodb

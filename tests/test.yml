@@ -10,7 +10,8 @@
     copy:
       src: ../
       dest: /etc/ansible/roles/asbrl-mongodb
-  
+      mode: 0755
+
   tasks:
 
   - name: Deploy MongoDB with Replica Set Standalone
@@ -24,7 +25,6 @@
       SECURITY_AUTHORIZATION: enabled
       REPLICA: master
       REPLICATION_NAME: rs0
-      NET_PORT: 27017
       INIT_USER_DB: dbtest
       INIT_USER_NAME: testusr
       INIT_USER_PASS: test1234
@@ -40,8 +40,7 @@
       SECURITY_AUTHORIZATION: enabled
       REPLICA: secondary
       REPLICATION_NAME: rs0
-      MASTER_IP: localhost
-      MASTER_PORT: 27017
       MASTER_HOST: localhost
+      MASTER_PORT: 27017
       MASTER_USERNAME: root
       MASTER_PASSWORD: secret
