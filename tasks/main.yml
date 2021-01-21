@@ -118,6 +118,15 @@
   tags:
   - asbrl-mongodb
 
+- name: Ensure that keyfile has correct permission
+  file:
+    path: /home/{{ default_user }}/{{ CONTAINER_NAME }}/certificates/{{ SECURITY_KEYFILE }}
+    owner: "999"
+    group: "999"
+  when: CONTAINER_STATE != 'absent' and SECURITY_KEYFILE is defined
+  tags:
+  - asbrl-mongodb
+
 - name: Start MongoDB Container
   docker_container:
     name: "{{ CONTAINER_NAME }}"
@@ -157,16 +166,22 @@
   tags:
   - asbrl-mongodb
 
-- name: Add node as a Secondary to existing Replica Set
+- name: Add node as a Secondary to existing Replica Set with priority:0 and votes:0
   command:
     argv:
       - sh
       - '-c'
-      - mongo
-      - -u'{{ MASTER_USERNAME }}' -p'{{ MASTER_PASSWORD }}'
-      - --host '{{ MASTER_HOST }}:{{ MASTER_PORT }}'
-      - --eval 'rs.add({host:"{{ SERVER_HOST }}:{{ NET_PORT }}",priority:0,votes:0})'
-      - --authenticationDatabase admin
+      - mongo -u '{{ MASTER_USERNAME }}' -p '{{ MASTER_PASSWORD }}' --host '{{ MASTER_HOST }}:{{ MASTER_PORT }}' --eval 'rs.add({host:"{{ SERVER_HOST }}:{{ NET_PORT }}",priority:0,votes:0})' --authenticationDatabase admin
+  when: REPLICA == 'secondary' and CONTAINER_STATE != 'absent'
+  tags:
+  - asbrl-mongodb
+
+- name: Add node as a Secondary to existing Replica Set with priority:1 and votes:1
+  command:
+    argv:
+      - sh
+      - '-c'
+      - mongo -u '{{ MASTER_USERNAME }}' -p '{{ MASTER_PASSWORD }}' --host '{{ MASTER_HOST }}:{{ MASTER_PORT }}' --eval 'rs.add({host:"{{ SERVER_HOST }}:{{ NET_PORT }}",priority:1,votes:1})' --authenticationDatabase admin
   when: REPLICA == 'secondary' and CONTAINER_STATE != 'absent'
   tags:
   - asbrl-mongodb

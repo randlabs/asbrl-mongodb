@@ -36,15 +36,15 @@ processManagement:
 
 security:
   authorization: {{ SECURITY_AUTHORIZATION }}
-{% if SECURITY_CLUSTER_AUTH_MODE == 'x509' or SECURITY_CLUSTER_AUTH_MODE == 'sendX509' %}
-  clusterAuthMode {{SECURITY_CLUSTER_AUTH_MODE}}
-{% elif SECURITY_KEYFILE != '' %}
+{% if SECURITY_KEYFILE is defined %}
   keyFile: /etc/mongo/certificates/{{ SECURITY_KEYFILE }}
+{% elif SECURITY_CLUSTER_AUTH_MODE is defined %}
+  clusterAuthMode: {{SECURITY_CLUSTER_AUTH_MODE}}
 {% endif %}
 
 #operationProfiling:
 
-{% if REPLICATION_NAME != '' %}
+{% if REPLICATION_NAME is defined %}
 replication:
   replSetName: {{ REPLICATION_NAME }}
 {% endif %}
