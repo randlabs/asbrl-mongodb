@@ -16,12 +16,12 @@ Role Variables
 - CONTAINER_NAME: 'mongo'
 - ROOT_USERNAME: 'root'
 - ROOT_PASSWORD: 'Pa$$w0rd'
-- SET_REPLICA_STANDALONE: false
+- REPLICA: none (primary/secondary)
 - WIREDTIGER_ENGINE_CACHESIZEGB: ''
 - SERVER_IP: '172.17.0.1'
 - NET_PORT: '27017'
 - NET_BINDIP: '127.0.0.1'
-- SECURITY_AUTHORIZATION: 'enabled'
+- SECURITY_AUTHORIZATION: 'disabled' (enabled)
 - SECURITY_CLUSTER_AUTH_MODE: ''
 - NET_SSL_MODE: ''
 - NET_SSL_PEM_KEYFILE: '' 
@@ -47,43 +47,45 @@ None
 Example Playbook
 ----------------
 
-      - name: Deploy MongoDB with authorization enabled
+      - name: Deploy MongoDB 
         include_role:
           name: asbrl-mongodb
         vars:
-          ROOT_USERNAME: "root"
-          ROOT_PASSWORD: "Pa$$w0rd"
-          SECURITY_AUTHORIZATION: "enabled"
-          WIREDTIGER_ENGINE_CACHESIZEGB: "6"
-        tags:
-          - asbrl-mongodb
+          ROOT_USERNAME: root
+          ROOT_PASSWORD: Pa$$w0rd
 
       - name: Deploy MongoDB with Replica Set Standalone
         include_role:
           name: asbrl-mongodb
         vars:
-          ROOT_USERNAME: "root"
-          ROOT_PASSWORD: "Pa$$w0rd"
-          SECURITY_AUTHORIZATION: "enabled"
-          REPLICATION_NAME: "rs0"
-          SET_REPLICA_STANDALONE: true
-        tags:
-          - asbrl-mongodb
+          CONTAINER_NAME: mongo-master
+          NET_PORT: 27017
+          ROOT_USERNAME: root
+          ROOT_PASSWORD: Pa$$w0rd
+          SECURITY_AUTHORIZATION: enabled
+          REPLICA: master
+          REPLICATION_NAME: rs0
+          NET_PORT: 27017
+          INIT_USER_DB: dbtest
+          INIT_USER_NAME: testusr
+          INIT_USER_PASS: test1234
 
-      - name: Deploy MongoDB with Replica Set Standalone and initialize user credentials
+      - name: Deploy MongoDB node as Secondary
         include_role:
           name: asbrl-mongodb
         vars:
-          ROOT_USERNAME: "root"
-          ROOT_PASSWORD: "Pa$$w0rd"
-          SECURITY_AUTHORIZATION: "enabled"
-          REPLICATION_NAME: "rs0"
-          SET_REPLICA_STANDALONE: true
-          INIT_USER_NAME: "dummy_usr"
-          INIT_USER_PASS: "1234"
-          INIT_USER_DB: "dummy"
-        tags:
-          - asbrl-mongodb
+          CONTAINER_NAME: mongo-slave
+          NET_PORT: 27018
+          ROOT_USERNAME: root
+          ROOT_PASSWORD: Pa$$w0rd2
+          SECURITY_AUTHORIZATION: enabled
+          REPLICA: secondary
+          REPLICATION_NAME: rs0
+          MASTER_IP: localhost
+          MASTER_PORT: 27017
+          MASTER_HOST: localhost
+          MASTER_USERNAME: root
+          MASTER_PASSWORD: Pa$$w0rd
 
 License
 -------
