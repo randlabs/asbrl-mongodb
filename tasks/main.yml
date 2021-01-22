@@ -1,4 +1,29 @@
 ---
+- name: Install Python Packages
+  pip:
+    name: "{{ item.name }}"
+    state: "{{ item.state }}"
+    executable: pip3
+  vars:
+    packages:
+    - name: pymongo
+      state: present
+  with_items: "{{ packages }}"
+  tags:
+  - asbrl-mongodb
+
+- name: Install Packages
+  apt:
+    name: "{{ item.name }}"
+    state: "{{ item.state }}"
+  vars:
+    packages:
+    - name: mongodb-clients
+      state: present
+  with_items: "{{ packages }}"
+  tags:
+  - asbrl-mongodb
+
 - name: Create MongoDB directory
   file:
     path: /home/{{ default_user }}/{{ CONTAINER_NAME }}/certificates
@@ -22,12 +47,36 @@
   tags:
   - asbrl-mongodb
 
-- name: MongoDB
+- name: Start MongoDB Container (without Replica Set)
+  docker_container:
+    name: "{{ CONTAINER_NAME }}"
+    image: "mongo:{{ BUILD }}"
+    pull: "true"
+    recreate: "yes"
+    env:
+      MONGO_INITDB_ROOT_USERNAME: "{{ ROOT_USERNAME | default(omit) }}"
+      MONGO_INITDB_ROOT_PASSWORD: "{{ ROOT_PASSWORD | default(omit) }}"
+    cpu_period: "{{ DOCKER_CPU_PERIOD }}"
+    cpu_quota: "{{ DOCKER_CPU_QUOTA }}"
+    memory: "{{ DOCKER_MEMORY }}"
+    state: "{{ CONTAINER_STATE }}"
+    log_driver: "{{ DOCKER_LOG_DRIVER }}"
+    log_options: "{{ DOCKER_LOG_OPTIONS }}"
+    restart_policy: "unless-stopped"
+    published_ports:
+      - "0.0.0.0:{{ NET_PORT }}:{{ NET_PORT }}"
+    volumes:
+      - '{{ CONTAINER_NAME }}_data:/data/db'
+  when: REPLICA == 'none'
+  tags:
+  - asbrl-mongodb
+
+- name: Init MongoDB Container Replica Set
   docker_container:
     name: "{{ CONTAINER_NAME }}"
     image: "mongo:{{ BUILD }}"
     command:
-      - -f /etc/mongo/mongod.conf
+      - "--replSet {{ REPLICATION_NAME }}"
     pull: "true"
     recreate: "yes"
     env:
@@ -43,10 +92,8 @@
     published_ports:
       - "0.0.0.0:{{ NET_PORT }}:{{ NET_PORT }}"
     volumes:
-      - /home/{{ default_user }}/{{ CONTAINER_NAME }}/mongod.conf:/etc/mongo/mongod.conf
       - '{{ CONTAINER_NAME }}_data:/data/db'
-      - /home/{{ default_user }}/{{ CONTAINER_NAME }}/certificates/:/etc/mongo/certificates
-      - /home/{{ default_user }}/{{ CONTAINER_NAME }}/set-rs-standalone.sh:/etc/mongo/set-rs-standalone.sh
+  when: REPLICA != 'none'
   tags:
   - asbrl-mongodb
 
@@ -54,48 +101,98 @@
   wait_for:
     port: "{{ NET_PORT }}"
     delay: 5
-  when: SET_REPLICA_STANDALONE and CONTAINER_STATE != 'absent'
+  when: REPLICA != 'none' and CONTAINER_STATE != 'absent'
   tags:
   - asbrl-mongodb
 
 - name: Config MongoDB Standalone Replica Set
-  command:
-    argv:
-      - docker
-      - exec
-      - "{{ CONTAINER_NAME }}"
-      - sh
-      - '-c'
-      - mongo --eval 'rs.initiate({_id:"{{ REPLICATION_NAME }}",version:1,members:[{_id:0,host:"{{ SERVER_IP }}:{{ NET_PORT }}"}]})'
-  ignore_errors: yes
-  when: SET_REPLICA_STANDALONE and CONTAINER_STATE != 'absent'
+  mongodb_replicaset:
+    login_port: "{{ NET_PORT }}"
+    login_user: "{{ ROOT_USERNAME }}"
+    login_password: "{{ ROOT_PASSWORD }}"
+    login_database: admin
+    replica_set: "{{ REPLICATION_NAME }}"
+    members: "{{ SERVER_HOST }}:{{ NET_PORT }}"
+    validate: no
+  when: REPLICA == 'master' and CONTAINER_STATE != 'absent'
   tags:
   - asbrl-mongodb
 
-- name: Setting Replica Set ClusterAdmin
-  command:
-   argv:
-      - docker
-      - exec
-      - "{{ CONTAINER_NAME }}"
-      - sh
-      - '-c'
-      - mongo --eval 'db.getSiblingDB("admin").createUser({"user":"{{ ROOT_USERNAME }}","pwd":"{{ ROOT_PASSWORD }}",roles:[{role:"userAdminAnyDatabase",db:"admin"},{"role":"clusterAdmin","db":"admin"}]})'
-  ignore_errors: yes
-  when: SET_REPLICA_STANDALONE and CONTAINER_STATE != 'absent'
+- name: Ensure that keyfile has correct permission
+  file:
+    path: /home/{{ default_user }}/{{ CONTAINER_NAME }}/certificates/{{ SECURITY_KEYFILE }}
+    owner: "999"
+    group: "999"
+  when: CONTAINER_STATE != 'absent' and SECURITY_KEYFILE is defined
+  tags:
+  - asbrl-mongodb
+
+- name: Start MongoDB Container
+  docker_container:
+    name: "{{ CONTAINER_NAME }}"
+    image: "mongo:{{ BUILD }}"
+    command:
+      - "--config /etc/mongo/mongod.conf"
+    pull: "true"
+    recreate: "yes"
+    cpu_period: "{{ DOCKER_CPU_PERIOD }}"
+    cpu_quota: "{{ DOCKER_CPU_QUOTA }}"
+    memory: "{{ DOCKER_MEMORY }}"
+    state: "{{ CONTAINER_STATE }}"
+    log_driver: "{{ DOCKER_LOG_DRIVER }}"
+    log_options: "{{ DOCKER_LOG_OPTIONS }}"
+    restart_policy: "unless-stopped"
+    published_ports:
+      - "0.0.0.0:{{ NET_PORT }}:{{ NET_PORT }}"
+    volumes:
+      - /home/{{ default_user }}/{{ CONTAINER_NAME }}/mongod.conf:/etc/mongo/mongod.conf
+      - '{{ CONTAINER_NAME }}_data:/data/db'
+      - /home/{{ default_user }}/{{ CONTAINER_NAME }}/certificates/:/etc/mongo/certificates
+  when: CONTAINER_STATE != 'absent'
   tags:
   - asbrl-mongodb
 
 - name: MongoDB INIT DB and Credentials
-  command:
-    argv:
-      - docker
-      - exec
-      - "{{ CONTAINER_NAME }}"
-      - sh
-      - '-c'
-      - mongo -u'{{ ROOT_USERNAME }}' -p'{{ ROOT_PASSWORD }}' --eval 'db.getSiblingDB("{{ INIT_USER_DB }}").createUser({"user":"{{ INIT_USER_NAME }}","pwd":"{{ INIT_USER_PASS }}",roles:[{role:"{{ INIT_USER_ROLE }}",db:"{{ INIT_USER_DB }}"}]})'
-  ignore_errors: yes
-  when: CONTAINER_STATE != 'absent' and INIT_USER_DB != '' and INIT_USER_NAME != '' and INIT_USER_PASS != ''
+  mongodb_user:
+    login_port: "{{ NET_PORT }}"
+    login_user: "{{ ROOT_USERNAME }}"
+    login_password: "{{ ROOT_PASSWORD }}"
+    database: "{{ INIT_USER_DB }}"
+    name: "{{ INIT_USER_NAME }}"
+    password: "{{ INIT_USER_PASS }}"
+    roles: "{{ INIT_USER_ROLE }}"
+    state: present
+  when: CONTAINER_STATE != 'absent' and INIT_USER_DB is defined and INIT_USER_NAME is defined and INIT_USER_PASS is defined
   tags:
   - asbrl-mongodb
+
+- name: Add node as a Secondary to existing Replica Set with priority:0 and votes:0
+  command:
+    argv:
+      - sh
+      - '-c'
+      - mongo -u '{{ MASTER_USERNAME }}' -p '{{ MASTER_PASSWORD }}' --host '{{ MASTER_HOST }}:{{ MASTER_PORT }}' --eval 'rs.add({host:"{{ SERVER_HOST }}:{{ NET_PORT }}",priority:0,votes:0})' --authenticationDatabase admin
+  when: REPLICA == 'secondary' and CONTAINER_STATE != 'absent'
+  tags:
+  - asbrl-mongodb
+
+- name: Add node as a Secondary to existing Replica Set with priority:1 and votes:1
+  command:
+    argv:
+      - sh
+      - '-c'
+      - mongo -u '{{ MASTER_USERNAME }}' -p '{{ MASTER_PASSWORD }}' --host '{{ MASTER_HOST }}:{{ MASTER_PORT }}' --eval 'rs.add({host:"{{ SERVER_HOST }}:{{ NET_PORT }}",priority:1,votes:1})' --authenticationDatabase admin
+  when: REPLICA == 'secondary' and CONTAINER_STATE != 'absent'
+  tags:
+  - asbrl-mongodb
+
+# - name: Add node as a Secondary to existing Replica Set
+#   mongodb_shell: (only work in Ansible 2.10)
+#     login_host: "{{ MASTER_HOST }}"
+#     login_port: "{{ MASTER_PORT }}"
+#     login_user: "{{ MASTER_USERNAME }}"
+#     login_password: "{{ MASTER_PASSWORD }}"
+#     eval: "rs.add({host:'{{ SERVER_HOST }}:{{ NET_PORT }}',priority:1,votes:1})"
+#   when: REPLICA == 'secondary' and CONTAINER_STATE != 'absent'
+#   tags:
+#   - asbrl-mongodb
