@@ -20,7 +20,7 @@ storage:
 net:
   port: {{ NET_PORT }}
   bindIp: {{ NET_BINDIP }}
-{% if SECURITY_CLUSTER_AUTH_MODE == 'x509' or SECURITY_CLUSTER_AUTH_MODE == 'sendX509' %}
+{% if SECURITY_CLUSTER_AUTH_MODE is defined %}
   ssl:
     mode: {{ NET_SSL_MODE }}
     PEMKeyFile: {{ NET_SSL_PEM_KEYFILE }}
