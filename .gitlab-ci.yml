@@ -1,8 +1,4 @@
-image: python:3-slim
-
-before_script:
-  - pip install ansible-lint
-  - ansible-lint --version
+image: registry.gitlab.com/gianet/moegui/devops/devops/ansible:2.9
 
 stages:
   - ansible-lint
