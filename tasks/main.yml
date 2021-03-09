@@ -1,26 +1,21 @@
 ---
 - name: Install Python Packages
   pip:
-    name: "{{ item.name }}"
-    state: "{{ item.state }}"
-    executable: pip3
-  vars:
-    packages:
-    - name: pymongo
-      state: present
-  with_items: "{{ packages }}"
+    name: 
+    - pymongo==3.2
+    state: "present"
+    executable: "{{ item }}"
+  loop: 
+  - pip2
+  - pip3
   tags:
   - asbrl-mongodb
 
 - name: Install Packages
   apt:
-    name: "{{ item.name }}"
-    state: "{{ item.state }}"
-  vars:
-    packages:
-    - name: mongodb-clients
-      state: present
-  with_items: "{{ packages }}"
+    name:
+    - mongodb-clients
+    state: "present"
   tags:
   - asbrl-mongodb
 
@@ -28,7 +23,7 @@
   file:
     path: /home/{{ default_user }}/{{ CONTAINER_NAME }}/certificates
     state: directory
-    mode: 0755
+    mode: '0755'
   tags:
   - asbrl-mongodb
 
@@ -43,7 +38,7 @@
   template:
     src: mongod.conf.j2
     dest: /home/{{ default_user }}/{{ CONTAINER_NAME }}/mongod.conf
-    mode: 0644
+    mode: '0644'
   tags:
   - asbrl-mongodb
 
@@ -106,17 +101,34 @@
   - asbrl-mongodb
 
 - name: Config MongoDB Standalone Replica Set
-  mongodb_replicaset:
-    login_port: "{{ NET_PORT }}"
-    login_user: "{{ ROOT_USERNAME }}"
-    login_password: "{{ ROOT_PASSWORD }}"
-    login_database: admin
-    replica_set: "{{ REPLICATION_NAME }}"
-    members: "{{ SERVER_HOST }}:{{ NET_PORT }}"
-    validate: no
+  command:
+    argv:
+      - docker
+      - exec
+      - "{{ CONTAINER_NAME }}"
+      - sh
+      - '-c'
+      - mongo --username '{{ ROOT_USERNAME }}' --password '{{ ROOT_PASSWORD }}' --eval 'rs.initiate({_id:"{{ REPLICATION_NAME }}",version:1,members:[{_id:0,host:"{{ ansible_host }}:{{ NET_PORT }}"}]})'
+  ignore_errors: yes
   when: REPLICA == 'master' and CONTAINER_STATE != 'absent'
   tags:
   - asbrl-mongodb
+
+# This Module doesn't work fine in Ansible 2.9 (check in new versions)
+# - name: Config MongoDB Standalone Replica Set
+#   mongodb_replicaset:
+#     login_host: "{{ ansible_host }}"
+#     login_port: "{{ NET_PORT }}"
+#     login_user: "{{ ROOT_USERNAME }}"
+#     login_password: "{{ ROOT_PASSWORD }}"
+#     login_database: admin
+#     replica_set: "{{ REPLICATION_NAME }}"
+#     members: "{{ SERVER_HOST }}:{{ NET_PORT }}"
+#     #ssl_cert_reqs: CERT_NONE
+#     validate: no
+#   when: REPLICA == 'master' and CONTAINER_STATE != 'absent'
+#   tags:
+#   - asbrl-mongodb
 
 - name: Ensure that keyfile has correct permission
   file:
@@ -152,16 +164,34 @@
   tags:
   - asbrl-mongodb
 
+# This Module doesn't work fine in Ansible 2.9 (check in new versions)
+# - name: MongoDB INIT DB and Credentials
+#   mongodb_user:
+#     auth_mechanism: "PLAIN"
+#     login_host: "{{ ansible_host }}"
+#     replica_set: "{{ REPLICATION_NAME }}"
+#     login_port: "{{ NET_PORT }}"
+#     login_user: "{{ ROOT_USERNAME }}"
+#     login_password: "{{ ROOT_PASSWORD }}"
+#     database: "{{ INIT_USER_DB }}"
+#     name: "{{ INIT_USER_NAME }}"
+#     password: "{{ INIT_USER_PASS }}"
+#     roles: "{{ INIT_USER_ROLE }}"
+#     state: present
+#   when: CONTAINER_STATE != 'absent' and INIT_USER_DB is defined and INIT_USER_NAME is defined and INIT_USER_PASS is defined
+#   tags:
+#   - asbrl-mongodb
+
 - name: MongoDB INIT DB and Credentials
-  mongodb_user:
-    login_port: "{{ NET_PORT }}"
-    login_user: "{{ ROOT_USERNAME }}"
-    login_password: "{{ ROOT_PASSWORD }}"
-    database: "{{ INIT_USER_DB }}"
-    name: "{{ INIT_USER_NAME }}"
-    password: "{{ INIT_USER_PASS }}"
-    roles: "{{ INIT_USER_ROLE }}"
-    state: present
+  command:
+    argv:
+      - docker
+      - exec
+      - "{{ CONTAINER_NAME }}"
+      - sh
+      - '-c'
+      - mongo --username '{{ ROOT_USERNAME }}' --password '{{ ROOT_PASSWORD }}' --eval 'db.getSiblingDB("{{ INIT_USER_DB }}").createUser({"user":"{{ INIT_USER_NAME }}","pwd":"{{ INIT_USER_PASS }}",roles:[{role:"{{ INIT_USER_ROLE }}",db:"{{ INIT_USER_DB }}"}]})'
+  ignore_errors: yes
   when: CONTAINER_STATE != 'absent' and INIT_USER_DB is defined and INIT_USER_NAME is defined and INIT_USER_PASS is defined
   tags:
   - asbrl-mongodb
@@ -186,6 +216,7 @@
   tags:
   - asbrl-mongodb
 
+# This Module doesn't work fine in Ansible 2.9 (check in new versions)
 # - name: Add node as a Secondary to existing Replica Set
 #   mongodb_shell: (only work in Ansible 2.10)
 #     login_host: "{{ MASTER_HOST }}"
