@@ -135,6 +135,7 @@
     path: /home/{{ default_user }}/{{ CONTAINER_NAME }}/certificates/{{ SECURITY_KEYFILE }}
     owner: "999"
     group: "999"
+    mode: "0400"
   when: CONTAINER_STATE != 'absent' and SECURITY_KEYFILE is defined
   tags:
   - asbrl-mongodb
