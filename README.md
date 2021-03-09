@@ -12,11 +12,11 @@ Role Variables
 --------------
 
 - default_user: 'ubuntu'
-- BUILD: '4.4.0'
+- BUILD: '4.4.3'
 - CONTAINER_NAME: 'mongo'
 - ROOT_USERNAME: 'root'
 - ROOT_PASSWORD: 'Pa$$w0rd'
-- REPLICA: none (primary/secondary)
+- REPLICA: NONE (PRIMARY/SECONDARY)
 - WIREDTIGER_ENGINE_CACHESIZEGB: ''
 - SERVER_HOST: '172.17.0.1'
 - NET_PORT: '27017'
