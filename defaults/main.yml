@@ -11,7 +11,6 @@ CONTAINER_STATE: 'started'
 VOLUME_STATE: 'present'
 REPLICA: none # none/primary/secondary
 WIREDTIGER_ENGINE_CACHESIZEGB: ''
-SERVER_HOST: '172.17.0.1' #used for Replica Set Standalone
 NET_PORT: '27017'
 NET_BINDIP: '0.0.0.0'
 SECURITY_AUTHORIZATION: 'disabled' #enabled/disabled  

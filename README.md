@@ -18,7 +18,6 @@ Role Variables
 - ROOT_PASSWORD: 'Pa$$w0rd'
 - REPLICA: NONE (PRIMARY/SECONDARY)
 - WIREDTIGER_ENGINE_CACHESIZEGB: ''
-- SERVER_HOST: '172.17.0.1'
 - NET_PORT: '27017'
 - NET_BINDIP: '127.0.0.1'
 - SECURITY_AUTHORIZATION: 'disabled' (enabled)
@@ -65,30 +64,33 @@ Example Playbook
         vars:
           CONTAINER_NAME: mongo-master
           NET_PORT: 27017
+          SECURITY_KEYFILE: key.pem
           ROOT_USERNAME: root
           ROOT_PASSWORD: secret
           SECURITY_AUTHORIZATION: enabled
-          REPLICA: master
+          REPLICA: PRIMARY
           REPLICATION_NAME: rs0
           INIT_USER_DB: dbtest
           INIT_USER_NAME: testusr
           INIT_USER_PASS: test1234
 
-      - name: Deploy MongoDB node as Secondary
+      - name: Deploy MongoDB node 2 as Secondary
         include_role:
           name: asbrl-mongodb
         vars:
           CONTAINER_NAME: mongo-slave
           NET_PORT: 27018
+          SECURITY_KEYFILE: key.pem
           ROOT_USERNAME: root
           ROOT_PASSWORD: secret2
           SECURITY_AUTHORIZATION: enabled
-          REPLICA: secondary
+          REPLICA: SECONDARY
           REPLICATION_NAME: rs0
           MASTER_HOST: localhost
           MASTER_PORT: 27017
           MASTER_USERNAME: root
           MASTER_PASSWORD: secret
+
 
 License
 -------

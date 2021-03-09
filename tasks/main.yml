@@ -202,7 +202,7 @@
     argv:
       - sh
       - '-c'
-      - mongo -u '{{ MASTER_USERNAME }}' -p '{{ MASTER_PASSWORD }}' --host '{{ MASTER_HOST }}:{{ MASTER_PORT }}' --eval 'rs.add({host:"{{ SERVER_HOST }}:{{ NET_PORT }}",priority:0,votes:0})' --authenticationDatabase admin
+      - mongo -u '{{ MASTER_USERNAME }}' -p '{{ MASTER_PASSWORD }}' --host '{{ MASTER_HOST }}:{{ MASTER_PORT }}' --eval 'rs.add({host:"{{ ansible_host }}:{{ NET_PORT }}",priority:0,votes:0})' --authenticationDatabase admin
   when: REPLICA == 'SECONDARY' and CONTAINER_STATE != 'absent'
   tags:
   - asbrl-mongodb
@@ -212,7 +212,7 @@
     argv:
       - sh
       - '-c'
-      - mongo -u '{{ MASTER_USERNAME }}' -p '{{ MASTER_PASSWORD }}' --host '{{ MASTER_HOST }}:{{ MASTER_PORT }}' --eval 'rs.add({host:"{{ SERVER_HOST }}:{{ NET_PORT }}",priority:1,votes:1})' --authenticationDatabase admin
+      - mongo -u '{{ MASTER_USERNAME }}' -p '{{ MASTER_PASSWORD }}' --host '{{ MASTER_HOST }}:{{ MASTER_PORT }}' --eval 'rs.add({host:"{{ ansible_host }}:{{ NET_PORT }}",priority:1,votes:1})' --authenticationDatabase admin
   when: REPLICA == 'SECONDARY' and CONTAINER_STATE != 'absent'
   tags:
   - asbrl-mongodb

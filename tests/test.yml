@@ -24,7 +24,7 @@
       ROOT_USERNAME: root
       ROOT_PASSWORD: secret
       SECURITY_AUTHORIZATION: enabled
-      REPLICA: master
+      REPLICA: PRIMARY
       REPLICATION_NAME: rs0
       INIT_USER_DB: dbtest
       INIT_USER_NAME: testusr
@@ -40,13 +40,12 @@
       ROOT_USERNAME: root
       ROOT_PASSWORD: secret2
       SECURITY_AUTHORIZATION: enabled
-      REPLICA: secondary
+      REPLICA: SECONDARY
       REPLICATION_NAME: rs0
       MASTER_HOST: localhost
       MASTER_PORT: 27017
       MASTER_USERNAME: root
       MASTER_PASSWORD: secret
-      SERVER_HOST: '172.17.0.1'
 
   - name: Deploy MongoDB node 3 as Secondary
     include_role:
@@ -58,10 +57,9 @@
       ROOT_USERNAME: root
       ROOT_PASSWORD: secret2
       SECURITY_AUTHORIZATION: enabled
-      REPLICA: secondary
+      REPLICA: SECONDARY
       REPLICATION_NAME: rs0
       MASTER_HOST: localhost
       MASTER_PORT: 27017
       MASTER_USERNAME: root
       MASTER_PASSWORD: secret
-      SERVER_HOST: '172.17.0.1'
