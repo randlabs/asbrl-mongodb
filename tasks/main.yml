@@ -62,7 +62,7 @@
       - "0.0.0.0:{{ NET_PORT }}:{{ NET_PORT }}"
     volumes:
       - '{{ CONTAINER_NAME }}_data:/data/db'
-  when: REPLICA == 'none'
+  when: REPLICA == 'NONE'
   tags:
   - asbrl-mongodb
 
@@ -88,7 +88,7 @@
       - "0.0.0.0:{{ NET_PORT }}:{{ NET_PORT }}"
     volumes:
       - '{{ CONTAINER_NAME }}_data:/data/db'
-  when: REPLICA != 'none'
+  when: REPLICA != 'NONE'
   tags:
   - asbrl-mongodb
 
@@ -96,7 +96,7 @@
   wait_for:
     port: "{{ NET_PORT }}"
     delay: 5
-  when: REPLICA != 'none' and CONTAINER_STATE != 'absent'
+  when: REPLICA != 'NONE' and CONTAINER_STATE != 'absent'
   tags:
   - asbrl-mongodb
 
@@ -110,7 +110,7 @@
       - '-c'
       - mongo --username '{{ ROOT_USERNAME }}' --password '{{ ROOT_PASSWORD }}' --eval 'rs.initiate({_id:"{{ REPLICATION_NAME }}",version:1,members:[{_id:0,host:"{{ ansible_host }}:{{ NET_PORT }}"}]})'
   ignore_errors: yes
-  when: REPLICA == 'master' and CONTAINER_STATE != 'absent'
+  when: REPLICA == 'PRIMARY' and CONTAINER_STATE != 'absent'
   tags:
   - asbrl-mongodb
 
@@ -126,7 +126,7 @@
 #     members: "{{ SERVER_HOST }}:{{ NET_PORT }}"
 #     #ssl_cert_reqs: CERT_NONE
 #     validate: no
-#   when: REPLICA == 'master' and CONTAINER_STATE != 'absent'
+#   when: REPLICA == 'PRIMARY' and CONTAINER_STATE != 'absent'
 #   tags:
 #   - asbrl-mongodb
 
@@ -202,7 +202,7 @@
       - sh
       - '-c'
       - mongo -u '{{ MASTER_USERNAME }}' -p '{{ MASTER_PASSWORD }}' --host '{{ MASTER_HOST }}:{{ MASTER_PORT }}' --eval 'rs.add({host:"{{ SERVER_HOST }}:{{ NET_PORT }}",priority:0,votes:0})' --authenticationDatabase admin
-  when: REPLICA == 'secondary' and CONTAINER_STATE != 'absent'
+  when: REPLICA == 'SECONDARY' and CONTAINER_STATE != 'absent'
   tags:
   - asbrl-mongodb
 
@@ -212,7 +212,7 @@
       - sh
       - '-c'
       - mongo -u '{{ MASTER_USERNAME }}' -p '{{ MASTER_PASSWORD }}' --host '{{ MASTER_HOST }}:{{ MASTER_PORT }}' --eval 'rs.add({host:"{{ SERVER_HOST }}:{{ NET_PORT }}",priority:1,votes:1})' --authenticationDatabase admin
-  when: REPLICA == 'secondary' and CONTAINER_STATE != 'absent'
+  when: REPLICA == 'SECONDARY' and CONTAINER_STATE != 'absent'
   tags:
   - asbrl-mongodb
 
@@ -224,6 +224,6 @@
 #     login_user: "{{ MASTER_USERNAME }}"
 #     login_password: "{{ MASTER_PASSWORD }}"
 #     eval: "rs.add({host:'{{ SERVER_HOST }}:{{ NET_PORT }}',priority:1,votes:1})"
-#   when: REPLICA == 'secondary' and CONTAINER_STATE != 'absent'
+#   when: REPLICA == 'SECONDARY' and CONTAINER_STATE != 'absent'
 #   tags:
 #   - asbrl-mongodb
