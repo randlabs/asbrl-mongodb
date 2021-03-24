@@ -13,6 +13,7 @@
     name:
     - mongodb-clients
     state: "present"
+    force: "yes"
   tags:
   - asbrl-mongodb
 
